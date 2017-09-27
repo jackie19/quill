@@ -127,18 +127,31 @@ BaseTheme.DEFAULTS = extend(true, {}, Theme.DEFAULTS, {
             fileInput.classList.add('ql-image');
             fileInput.addEventListener('change', () => {
               if (fileInput.files != null && fileInput.files[0] != null) {
-                let reader = new FileReader();
-                reader.onload = (e) => {
-                  let range = this.quill.getSelection(true);
-                  this.quill.updateContents(new Delta()
-                    .retain(range.index)
-                    .delete(range.length)
-                    .insert({ image: e.target.result })
-                  , Emitter.sources.USER);
-                  this.quill.setSelection(range.index + 1, Emitter.sources.SILENT);
-                  fileInput.value = "";
-                }
-                reader.readAsDataURL(fileInput.files[0]);
+
+                  let success = (image) => {
+                      let range = this.quill.getSelection(true);
+                      this.quill.updateContents(new Delta()
+                              .retain(range.index)
+                              .delete(range.length)
+                              .insert({image})
+                          , Emitter.sources.USER);
+                      this.quill.setSelection(range.index + 1, Emitter.sources.SILENT);
+                      fileInput.value = "";
+                  }
+                  if (this.quill.options.plugin) {
+                      let file = fileInput.files[0]
+                      let up = this.quill.options.plugin.upload(file)
+                      up.then((res) => {
+                          success(res)
+                      })
+                  } else {
+                      let reader = new FileReader();
+                      reader.onload = (e) => {
+                          success(e.target.result)
+                      }
+                      reader.readAsDataURL(fileInput.files[0]);
+                  }
+
               }
             });
             this.container.appendChild(fileInput);
